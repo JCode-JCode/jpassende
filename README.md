@@ -1,8 +1,11 @@
+# jpassende
+
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PyPI version](https://img.shields.io/pypi/v/jpassende)](https://pypi.org/project/jpassende/)
 [![PyPI project](https://img.shields.io/badge/PyPI-jpassende-blue)](https://pypi.org/project/jpassende/)
+[![Developer](https://img.shields.io/badge/developer-J%20Code-blueviolet)](#)
 
 <br>
 
@@ -69,6 +72,8 @@ pip install jpassende
 ```
 
 jpassende depends only on pycryptodome (≥ 3.18) and Python's standard library.
+
+Supported Python versions: 3.9 – 3.13 and Maybe etc.
 
 ---
 
@@ -148,6 +153,20 @@ except ValueError as e:
 
 ---
 
+## JavaScript Port
+
+jpassende also has an official JavaScript port called **jjspassende**, offering the same patterns and API design for Node.js and browser environments.
+
+**· GitHub repository:**
+https://github.com/JCode-JCode/jjspassende
+
+**· npm package:**
+jjspassende is also available via npm.
+
+For full usage details, installation instructions, and examples, check out the jjspassende README in its own repository.
+
+---
+
 ## Issues and Contributions
 
 Bug reports and feature requests are welcome via GitHub Issues. Pull requests should maintain the existing code style and include tests where appropriate.
@@ -170,4 +189,4 @@ This project is licensed under the Apache License 2.0 – see the LICENSE file f
 
 ---
 
-Designed and built with love by **J Code**
+Designed and built with love by **J Code❤️**

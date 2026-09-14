@@ -157,13 +157,10 @@ class JPassende(AeadMixin, StreamMixin, BlockMixin, DerivationMixin):
               nonce: bytes, ciphertext: bytes, mac_key: Optional[bytes] = None) -> bytes:
         pattern_id = self.PATTERN_INDEX[pattern]
         flags = 0x01 if aad else 0
-        header = self._MAGIC + bytes([self._VERSION, pattern_id, flags])
-        payload = header
+        payload = self._MAGIC + bytes([self._VERSION, pattern_id, flags])
         if aad:
-            aad_block = struct.pack('>I', len(aad)) + aad
-            payload += aad_block
-        body = salt + nonce + ciphertext
-        payload += body
+            payload += struct.pack('>I', len(aad)) + aad
+        payload += salt + nonce + ciphertext
         if mac_key:
             payload += self._mac(mac_key, payload)
         return payload
@@ -213,13 +210,20 @@ class JPassende(AeadMixin, StreamMixin, BlockMixin, DerivationMixin):
                          salt: bytes, derived_data: bytes, verification: bytes) -> bytes:
         pattern_id = self.PATTERN_INDEX[pattern]
         flags = 0x01 if aad else 0
-        header = self._MAGIC + bytes([self._VERSION, pattern_id, flags])
-        aad_block = struct.pack('>I', len(aad)) + aad if aad else b''
-        return header + aad_block + salt + derived_data + verification
+        payload = self._MAGIC + bytes([self._VERSION, pattern_id, flags])
+        payload += struct.pack('>I', len(aad)) + aad if aad else b''
+        return payload + salt + derived_data + verification
 
     def _unpack_derivation(self, package: bytes, pattern: str) -> Tuple[Optional[bytes], bytes, bytes, bytes]:
-        if package[:4] != self._MAGIC or package[4] != self._VERSION or package[5] != self.PATTERN_INDEX[pattern]:
-            raise InvalidPackageError("  Header mismatch")
+        verification_size = 16
+        if len(package) < 7:
+            raise InvalidPackageError("  Invalid package – too short for header")
+        if package[:4] != self._MAGIC:
+            raise InvalidPackageError("  Invalid magic bytes")
+        if package[4] != self._VERSION:
+            raise InvalidPackageError(f"  Unsupported version: {package[4]}")
+        if package[5] != self.PATTERN_INDEX[pattern]:
+            raise InvalidPackageError("  Pattern mismatch")
         flags = package[6]
         pos = 7
         aad = None
@@ -232,11 +236,13 @@ class JPassende(AeadMixin, StreamMixin, BlockMixin, DerivationMixin):
                 raise InvalidPackageError("  Invalid package – truncated AAD")
             aad = package[pos:pos + aad_len]
             pos += aad_len
+        if len(package) < pos + self._salt_size + verification_size:
+            raise InvalidPackageError("  Invalid package – body too short")
         salt = package[pos:pos + self._salt_size]
         pos += self._salt_size
-        derived = package[pos:-16]
-        verification = package[-16:]
-        if pos + len(derived) + 16 != len(package):
+        derived = package[pos:-verification_size]
+        verification = package[-verification_size:]
+        if pos + len(derived) + verification_size != len(package):
             raise InvalidPackageError("  Invalid derivation package – trailing data")
         return aad, salt, derived, verification
 

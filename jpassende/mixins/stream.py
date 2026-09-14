@@ -143,13 +143,17 @@ class StreamMixin:
         nonce = self._secure_bytes(16)
         sha3 = hashlib.sha3_256
         blake2b = hashlib.blake2b
+        xor = self._xor_bytes
         stateA = sha3(enc_key + nonce).digest()
         stateB = blake2b(enc_key + nonce, digest_size=32).digest()
         result = bytearray()
-        for byte in data_bytes:
-            result.append(byte ^ (stateA[0] ^ stateB[0]))
+        dlen = len(data_bytes)
+        for i in range(0, dlen, 32):
+            chunk = data_bytes[i:i + 32]
             stateA = sha3(stateA).digest()
             stateB = blake2b(stateB, digest_size=32).digest()
+            keystream = xor(stateA, stateB)
+            result.extend(xor(chunk, keystream[:len(chunk)]))
         ciphertext = bytes(result)
         package = self._pack('lfsr', aad, salt, nonce, ciphertext, mac_key=mac_key)
         logger.debug("lfsr: encrypted %d bytes", len(ciphertext))
@@ -173,13 +177,17 @@ class StreamMixin:
             raise ValueError("  MAC verification failed")
         sha3 = hashlib.sha3_256
         blake2b = hashlib.blake2b
+        xor = self._xor_bytes
         stateA = sha3(enc_key + nonce).digest()
         stateB = blake2b(enc_key + nonce, digest_size=32).digest()
         result = bytearray()
-        for byte in ciphertext:
-            result.append(byte ^ (stateA[0] ^ stateB[0]))
+        clen = len(ciphertext)
+        for i in range(0, clen, 32):
+            chunk = ciphertext[i:i + 32]
             stateA = sha3(stateA).digest()
             stateB = blake2b(stateB, digest_size=32).digest()
+            keystream = xor(stateA, stateB)
+            result.extend(xor(chunk, keystream[:len(chunk)]))
         plain = bytes(result)
         logger.debug("dlfsr: decrypted %d bytes", len(plain))
         return plain if output_raw else self._to_str(plain)
